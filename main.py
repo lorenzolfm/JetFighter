@@ -4,8 +4,6 @@ import pygame
 pygame.init()
 
 pygame.display.set_caption('Raiden Fighters')
-# gameScreen = pygame.display.set_mode((gameScreenWidth,gameScreenHeight))
-# background = pygame.image.load('skins/bg.png')
 playerSkin = pygame.image.load('skins/player.png')
 playerSkin = pygame.transform.scale(playerSkin, (50,50))
 clock = pygame.time.Clock()
@@ -35,15 +33,8 @@ class Screen:
 			self.window.blit(self.background, (0,relative_y))
 		self.image_y += 1
 
-# def scrollScreen():
-# 	relative_y =  % gameScreenHeight
-# 	gameScreen.blit(background,(0, relative_y - gameScreenHeight))
-# 	if relative_y < gameScreenHeight:
-# 		gameScreen.blit(background,(0,relative_y))
-
 player = Player(225,300,50,50)
 screen = Screen('skins/bg.png')
-
 
 while True:
 	clock.tick(27)
