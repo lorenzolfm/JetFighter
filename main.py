@@ -6,12 +6,8 @@ pygame.init()
 run = True
 
 pygame.display.set_caption('Raiden Fighters')
-playerSkin = pygame.image.load('skins/player.png')
-playerSkin = pygame.transform.scale(playerSkin, (50,50))
 clock = pygame.time.Clock()
 
-
-reloadingEvent  = pygame.USEREVENT + 1
 
 def eventListener():
 	getEvents()
@@ -22,9 +18,12 @@ def getEvents():
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			run = False
-		if event.type == reloadingEvent:
+		if event.type == player.reloadingEvent:
 			player.reloading = True
-			pygame.time.set_timer(reloadingEvent,0)
+			pygame.time.set_timer(player.reloadingEvent,0)
+		if event.type == enemies.respawnEvent:
+			enemies.respawn = True
+			pygame.time.set_timer(enemies.respawnEvent,0)
 
 class Player:
 	def __init__(self,x,y,width,height):
@@ -35,6 +34,9 @@ class Player:
 		self.velocity = 7
 		self.bullets = []
 		self.reloading = True
+		self.reloadingEvent = pygame.USEREVENT + 1
+		self.skin = pygame.image.load('skins/player.png')
+		self.skin = pygame.transform.scale(self.skin, (50,50))	
 
 	def keyListener(self):
 		keys = pygame.key.get_pressed()
@@ -42,7 +44,7 @@ class Player:
 			if self.reloading:
 				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),7))
 				self.reloading = False
-				pygame.time.set_timer(reloadingEvent,500)
+				pygame.time.set_timer(self.reloadingEvent,500)
 		if keys[pygame.K_LEFT] and self.x > self.velocity:
 			self.x -= self.velocity
 		if keys[pygame.K_RIGHT] and self.x < 450 - self.width :
@@ -52,8 +54,8 @@ class Player:
 		if keys[pygame.K_DOWN] and self.y < 550 - self.height - 5:
 			self.y += self.velocity
 
-	def draw(self,skin):
-		screen.window.blit(skin, (self.x,self.y))
+	def draw(self):
+		screen.window.blit(self.skin, (self.x,self.y))
 
 	def bulletMover(self):
 		for bullet in self.bullets:
@@ -61,6 +63,49 @@ class Player:
 				bullet.y -= bullet.velocity
 			else:
 				self.bullets.pop(self.bullets.index(bullet))
+
+class Enemy:
+	def __init__(self,x,y,width,height):
+		self.x = x
+		self.y = y
+		self.width = width
+		self.height = height
+		self.velocity = 5
+		self.skin = pygame.image.load('skins/enemy.png')
+		self.skin = pygame.transform.scale(self.skin, (50,50))
+
+	def draw(self):
+		screen.window.blit(self.skin, (self.x,self.y))
+
+	def move(self):
+		self.y += self.velocity
+	
+
+class Enemies:
+	def __init__(self):
+		self.enemies = []
+		self.respawnEvent = pygame.USEREVENT + 2
+		self.respawn = True
+
+	def control(self):
+		if self.respawn:
+			self.enemies.append(Enemy(random.randrange(400),20,50,50))
+			self.respawn = False
+			pygame.time.set_timer(self.respawnEvent,2000)
+		for enemy in self.enemies:
+			if enemy.y > 550:
+				self.enemies.pop(self.enemies.index(enemy))
+			#if hit:
+				#pop
+
+	def draw(self):
+		for enemy in self.enemies:
+				enemy.draw()
+
+	def move(self):
+		for enemy in self.enemies:
+			enemy.move()
+
 
 class Projectile:
 	def __init__(self,x,y,color,velocity):
@@ -89,7 +134,9 @@ class Screen:
 		self.image_y += 1
 
 player = Player(225,300,50,50)
+enemy = Enemy(100,100,50,50)
 screen = Screen('skins/bg.png')
+enemies = Enemies()
 
 while run:
 	clock.tick(27)
@@ -98,6 +145,9 @@ while run:
 	for bullet in player.bullets:
 		bullet.draw()
 	player.bulletMover()
-	player.draw(playerSkin)
+	player.draw()
+	enemies.control()
+	enemies.move()
+	enemies.draw()
 	pygame.display.update()
 
