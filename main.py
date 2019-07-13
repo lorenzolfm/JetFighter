@@ -79,6 +79,9 @@ class Enemy:
 
 	def move(self):
 		self.y += self.velocity
+
+	def hit(self):
+		pass
 	
 
 class Enemies:
@@ -95,17 +98,11 @@ class Enemies:
 		for enemy in self.enemies:
 			if enemy.y > 550:
 				self.enemies.pop(self.enemies.index(enemy))
+			else:
+				enemy.draw()
+				enemy.move()
 			#if hit:
 				#pop
-
-	def draw(self):
-		for enemy in self.enemies:
-				enemy.draw()
-
-	def move(self):
-		for enemy in self.enemies:
-			enemy.move()
-
 
 class Projectile:
 	def __init__(self,x,y,color,velocity):
@@ -147,7 +144,5 @@ while run:
 	player.bulletMover()
 	player.draw()
 	enemies.control()
-	enemies.move()
-	enemies.draw()
 	pygame.display.update()
 
