@@ -71,17 +71,22 @@ class Enemy:
 		self.width = width
 		self.height = height
 		self.velocity = 5
+		self.hitbox = (self.x+13,self.y,25,50)
 		self.skin = pygame.image.load('skins/enemy.png')
 		self.skin = pygame.transform.scale(self.skin, (50,50))
 
 	def draw(self):
 		screen.window.blit(self.skin, (self.x,self.y))
+		self.hitbox = (self.x+13,self.y,25,50)
 
 	def move(self):
 		self.y += self.velocity
 
 	def hit(self):
-		pass
+		for bullet in player.bullets:
+			if bullet.y + bullet.radius < self.hitbox[1] + self.hitbox[3] and bullet.y - bullet.radius > self.hitbox[1] and bullet.x + bullet.radius > self.hitbox[0] and bullet.x - bullet.radius < self.hitbox[0] + self.hitbox[2]:
+				player.bullets.pop(player.bullets.index(bullet))
+				enemies.enemies.pop(enemies.enemies.index(self))
 	
 
 class Enemies:
@@ -94,15 +99,14 @@ class Enemies:
 		if self.respawn:
 			self.enemies.append(Enemy(random.randrange(400),20,50,50))
 			self.respawn = False
-			pygame.time.set_timer(self.respawnEvent,2000)
+			pygame.time.set_timer(self.respawnEvent,1500)
 		for enemy in self.enemies:
 			if enemy.y > 550:
 				self.enemies.pop(self.enemies.index(enemy))
 			else:
 				enemy.draw()
 				enemy.move()
-			#if hit:
-				#pop
+				enemy.hit()
 
 class Projectile:
 	def __init__(self,x,y,color,velocity):
