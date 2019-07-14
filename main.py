@@ -56,6 +56,7 @@ class Player:
 
 	def draw(self):
 		screen.window.blit(self.skin, (self.x,self.y))
+		self.hitbox = (self.x+13,self.y,25,50)
 
 	def bulletMover(self):
 		for bullet in self.bullets:
@@ -71,6 +72,7 @@ class Enemy:
 		self.width = width
 		self.height = height
 		self.velocity = 5
+		self.bullets = []
 		self.hitbox = (self.x+13,self.y,25,50)
 		self.skin = pygame.image.load('skins/enemy.png')
 		self.skin = pygame.transform.scale(self.skin, (50,50))
@@ -88,6 +90,15 @@ class Enemy:
 				player.bullets.pop(player.bullets.index(bullet))
 				enemies.enemies.pop(enemies.enemies.index(self))
 	
+	def shoot(self):
+		if random.randrange(100) < 10:
+			self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),8))
+		for bullet in self.bullets:
+			if bullet.y < screen.gameScreenHeight and bullet.y > 0:
+				bullet.y += bullet.velocity
+			else:
+				self.bullets.pop(self.bullets.index(bullet))
+
 
 class Enemies:
 	def __init__(self):
@@ -107,6 +118,7 @@ class Enemies:
 				enemy.draw()
 				enemy.move()
 				enemy.hit()
+				enemy.shoot()
 
 class Projectile:
 	def __init__(self,x,y,color,velocity):
@@ -145,6 +157,9 @@ while run:
 	screen.scrollScreen()
 	for bullet in player.bullets:
 		bullet.draw()
+	for enemy in enemies.enemies:
+		for bullet in enemy.bullets:
+			bullet.draw() 
 	player.bulletMover()
 	player.draw()
 	enemies.control()
