@@ -21,6 +21,9 @@ def getEvents():
 		if event.type == player.reloadingEvent:
 			player.reloading = True
 			pygame.time.set_timer(player.reloadingEvent,0)
+		if event.type == player.hitEvent:
+			player.hitCooldown = True
+			pygame.time.set_timer(player.hitEvent,0)
 		if event.type == enemies.respawnEvent:
 			enemies.respawn = True
 			pygame.time.set_timer(enemies.respawnEvent,0)
@@ -32,9 +35,12 @@ class Player:
 		self.width = width
 		self.height = height
 		self.velocity = 7
+		self.hp = 5
 		self.bullets = []
 		self.reloading = True
+		self.hitCooldown = True
 		self.reloadingEvent = pygame.USEREVENT + 1
+		self.hitEvent = pygame.USEREVENT +2
 		self.skin = pygame.image.load('skins/player.png')
 		self.skin = pygame.transform.scale(self.skin, (50,50))	
 
@@ -44,8 +50,7 @@ class Player:
 			if self.reloading:
 				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),7))
 				self.reloading = False
-				print('')
-				pygame.time.set_timer(self.reloadingEvent,500)
+				pygame.time.set_timer(self.reloadingEvent,1500)
 		if keys[pygame.K_LEFT] and self.x > self.velocity:
 			self.x -= self.velocity
 		if keys[pygame.K_RIGHT] and self.x < 450 - self.width :
@@ -58,6 +63,7 @@ class Player:
 	def draw(self):
 		screen.window.blit(self.skin, (self.x,self.y))
 		self.hitbox = (self.x+13,self.y,25,50)
+		#pygame.draw.rect(screen.window,(255,0,0), self.hitbox, 2)
 
 	def bulletMover(self):
 		for bullet in self.bullets:
@@ -68,12 +74,22 @@ class Player:
 
 	def hit(self):
 		for enemy in enemies.enemies:
-			if self.y <= enemy.y + enemy.height and enemy.y <= self.y + self.height:
-				if self.x <= enemy.x + enemy.width and self.x + self.width > enemy.x:
-					print('hit')
+			if self.hitbox[1] <= enemy.hitbox[1] + enemy.hitbox[3] and self.hitbox[1] + self.hitbox[3] >= enemy.hitbox[1]:
+				if self.hitbox[0] <= enemy.hitbox[0] + enemy.hitbox[2] and self.hitbox[0] + self.hitbox[2] >= enemy.hitbox[0]:
+					if self.hitCooldown:
+						self.hitCooldown = False
+						self.hp -= 1
+						print(self.hp)
+						pygame.time.set_timer(self.hitEvent,500)
 			for bullet in enemy.bullets:
-				if bullet.y + bullet.radius > self.hitbox[1] and bullet.y - bullet.radius < self.hitbox[1] + self.height and bullet.x + bullet.radius > self.hitbox[0]:
-					pass
+				if self.hitbox[1] <= bullet.y + bullet.radius and self.hitbox[1] + self.hitbox[3] >= bullet.y - bullet.radius:
+					if self.hitbox[0] <= bullet.x + bullet.radius and self.hitbox[0] + self.hitbox[2] >= bullet.x - bullet.radius:
+						if self.hitCooldown:
+							self.hitCooldown = False
+							self.hp -= 1
+							print(self.hp)
+							pygame.time.set_timer(self.hitEvent,500)
+
 class Enemy:
 	def __init__(self,x,y,width,height):
 		self.x = x
@@ -89,6 +105,7 @@ class Enemy:
 	def draw(self):
 		screen.window.blit(self.skin, (self.x,self.y))
 		self.hitbox = (self.x+13,self.y,25,50)
+		#pygame.draw.rect(screen.window,(255,0,0), self.hitbox, 2)
 
 	def move(self):
 		self.y += self.velocity
@@ -100,7 +117,7 @@ class Enemy:
 				enemies.enemies.pop(enemies.enemies.index(self))
 	
 	def shoot(self):
-		if random.randrange(100) < 10:
+		if random.randrange(100) < 4:
 			self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),8))
 		for bullet in self.bullets:
 			if bullet.y < screen.gameScreenHeight and bullet.y > 0:
