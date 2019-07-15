@@ -44,6 +44,7 @@ class Player:
 			if self.reloading:
 				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),7))
 				self.reloading = False
+				print('')
 				pygame.time.set_timer(self.reloadingEvent,500)
 		if keys[pygame.K_LEFT] and self.x > self.velocity:
 			self.x -= self.velocity
@@ -65,6 +66,14 @@ class Player:
 			else:
 				self.bullets.pop(self.bullets.index(bullet))
 
+	def hit(self):
+		for enemy in enemies.enemies:
+			if self.y <= enemy.y + enemy.height and enemy.y <= self.y + self.height:
+				if self.x <= enemy.x + enemy.width and self.x + self.width > enemy.x:
+					print('hit')
+			for bullet in enemy.bullets:
+				if bullet.y + bullet.radius > self.hitbox[1] and bullet.y - bullet.radius < self.hitbox[1] + self.height and bullet.x + bullet.radius > self.hitbox[0]:
+					pass
 class Enemy:
 	def __init__(self,x,y,width,height):
 		self.x = x
@@ -161,6 +170,7 @@ while run:
 		for bullet in enemy.bullets:
 			bullet.draw() 
 	player.bulletMover()
+	player.hit()
 	player.draw()
 	enemies.control()
 	pygame.display.update()
