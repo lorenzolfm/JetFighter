@@ -8,6 +8,8 @@ run = True
 pygame.display.set_caption('Raiden Fighters')
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('arial',20, True)
+newGame = True
+gameOver = False
 
 def eventListener():
 	getEvents()
@@ -34,6 +36,63 @@ def displayInfo():
 	pygame.draw.rect(screen.window, (255,0,0), (200,10,50,10))
 	pygame.draw.rect(screen.window, (0,255,0), (200,10,50 - ((0.25*50)*(5-player.hp)),10))
 
+def startGameRoutine():
+	gameOverScreenEventListener()
+	drawStartGameScreen()
+
+def gameOverRoutine():
+	gameOverScreenEventListener()
+	drawGameOverScreen()
+
+def drawStartGameScreen():
+	screen.window.fill((99, 78, 78))
+	gameOverText = font.render('Defenda nossa ilha dos invasores!', 1, (255, 87, 51))
+	screen.window.blit(gameOverText,((screen.width/2)-170,10))
+	playAgainText = font.render("'J' para jogar, 'X' para sair.",1,(255, 87, 51))
+	screen.window.blit(playAgainText, (100,150))
+	screen.window.blit(player.skin,(212,400))
+	pygame.display.update()
+
+def drawGameOverScreen():
+	screen.window.fill((99, 78, 78))
+	gameOverText = font.render('Fim de Jogo!', 1, (255, 87, 51))
+	screen.window.blit(gameOverText,((screen.width/2)-50,10))
+	scoreText = font.render('Score: ' + str(player.score), 1, (255, 87, 51))
+	screen.window.blit(scoreText,((screen.width/2)-30,75))
+	playAgainText = font.render("'J' para jogar, 'X' para sair.",1,(255, 87, 51))
+	screen.window.blit(playAgainText, (120,150))
+	screen.window.blit(player.skin,(212,400))
+	pygame.display.update()
+
+def gameOverScreenEventListener():
+	global run
+	global gameOver
+	global newGame
+	for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			run = False
+			gameOver = False
+			newGame = False
+		if event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_x:
+				run = False
+				gameOver = False
+				newGame = False
+			if event.key == pygame.K_j:
+				restartGame()
+
+def restartGame():
+	global gameOver
+	global newGame
+
+	gameOver = False
+	newGame = False
+	player.hp = 5
+	player.score = 0
+	player.x = 212
+	player.y = 400
+	enemies.enemies.clear()
+
 
 class Player:
 	def __init__(self,x,y,width,height):
@@ -58,7 +117,7 @@ class Player:
 			if self.reloading:
 				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),7))
 				self.reloading = False
-				pygame.time.set_timer(self.reloadingEvent,1500)
+				pygame.time.set_timer(self.reloadingEvent,500)
 		if keys[pygame.K_LEFT] and self.x > self.velocity:
 			self.x -= self.velocity
 		if keys[pygame.K_RIGHT] and self.x < 450 - self.width :
@@ -75,22 +134,23 @@ class Player:
 
 	def bulletMover(self):
 		for bullet in self.bullets:
-			if bullet.y < screen.gameScreenHeight and bullet.y > 0:
+			if bullet.y < screen.height and bullet.y > 0:
 				bullet.y -= bullet.velocity
 			else:
 				self.bullets.pop(self.bullets.index(bullet))
 
 	def hit(self):
-		global run 
+		global gameOver 
 		for enemy in enemies.enemies:
 			if self.hitbox[1] <= enemy.hitbox[1] + enemy.hitbox[3] and self.hitbox[1] + self.hitbox[3] >= enemy.hitbox[1]:
 				if self.hitbox[0] <= enemy.hitbox[0] + enemy.hitbox[2] and self.hitbox[0] + self.hitbox[2] >= enemy.hitbox[0]:
-					if self.hitCooldown and self.hp >= 2:
-						self.hitCooldown = False
-						self.hp -= 1
-						pygame.time.set_timer(self.hitEvent,500)
-					elif self.hitCooldown and self.hp < 2:
-						run = False
+					if enemy.visible:
+						if self.hitCooldown and self.hp >= 2:
+							self.hitCooldown = False
+							self.hp -= 1
+							pygame.time.set_timer(self.hitEvent,500)
+						elif self.hitCooldown and self.hp < 2:
+							gameOver = True
 			for bullet in enemy.bullets:
 				if self.hitbox[1] <= bullet.y + bullet.radius and self.hitbox[1] + self.hitbox[3] >= bullet.y - bullet.radius:
 					if self.hitbox[0] <= bullet.x + bullet.radius and self.hitbox[0] + self.hitbox[2] >= bullet.x - bullet.radius:
@@ -99,8 +159,7 @@ class Player:
 							self.hp -= 1
 							pygame.time.set_timer(self.hitEvent,500)
 						elif self.hitCooldown and self.hp < 2:
-							run = False
-
+							gameOver = True
 class Enemy:
 	def __init__(self,x,y,width,height):
 		self.x = x
@@ -109,14 +168,16 @@ class Enemy:
 		self.height = height
 		self.velocity = 5
 		self.bullets = []
+		self.visible = True
 		self.hitbox = (self.x+13,self.y,25,50)
 		self.skin = pygame.image.load('skins/enemy.png')
 		self.skin = pygame.transform.scale(self.skin, (50,50))
 
 	def draw(self):
-		screen.window.blit(self.skin, (self.x,self.y))
-		self.hitbox = (self.x+13,self.y,25,50)
-		#pygame.draw.rect(screen.window,(255,0,0), self.hitbox, 2)
+		if self.visible:
+			screen.window.blit(self.skin, (self.x,self.y))
+			self.hitbox = (self.x+13,self.y,25,50)
+			#pygame.draw.rect(screen.window,(255,0,0), self.hitbox, 2)
 
 	def move(self):
 		self.y += self.velocity
@@ -125,14 +186,15 @@ class Enemy:
 		for bullet in player.bullets:
 			if bullet.y + bullet.radius < self.hitbox[1] + self.hitbox[3] and bullet.y - bullet.radius > self.hitbox[1] and bullet.x + bullet.radius > self.hitbox[0] and bullet.x - bullet.radius < self.hitbox[0] + self.hitbox[2]:
 				player.bullets.pop(player.bullets.index(bullet))
-				enemies.enemies.pop(enemies.enemies.index(self))
+				self.visible = False
 				player.score += 1
 	
 	def shoot(self):
 		if random.randrange(100) < 4:
-			self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),8))
+			if self.visible:
+				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),8))
 		for bullet in self.bullets:
-			if bullet.y < screen.gameScreenHeight and bullet.y > 0:
+			if bullet.y < screen.height and bullet.y > 0:
 				bullet.y += bullet.velocity
 			else:
 				self.bullets.pop(self.bullets.index(bullet))
@@ -173,14 +235,14 @@ class Screen:
 	def __init__(self,backgroundPath):
 		self.background = pygame.image.load(backgroundPath)
 		self.image_y = 0
-		self.gameScreenHeight = self.background.get_rect().height
-		self.gameScreenWidth = self.background.get_rect().width
-		self.window = pygame.display.set_mode((self.gameScreenWidth,self.gameScreenHeight))
+		self.height = self.background.get_rect().height
+		self.width = self.background.get_rect().width
+		self.window = pygame.display.set_mode((self.width,self.height))
 
 	def scrollScreen(self):
-		relative_y = self.image_y % self.gameScreenHeight
-		self.window.blit(self.background,(0,relative_y - self.gameScreenHeight))
-		if relative_y < self.gameScreenHeight:
+		relative_y = self.image_y % self.height
+		self.window.blit(self.background,(0,relative_y - self.height))
+		if relative_y < self.height:
 			self.window.blit(self.background, (0,relative_y))
 		self.image_y += 1
 
@@ -191,6 +253,10 @@ enemies = Enemies()
 
 while run:
 	clock.tick(27)
+	while newGame:
+		startGameRoutine()
+	while gameOver:
+		gameOverRoutine()
 	eventListener()
 	screen.scrollScreen()
 	for bullet in player.bullets:
