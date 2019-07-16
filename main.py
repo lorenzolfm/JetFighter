@@ -7,7 +7,7 @@ run = True
 
 pygame.display.set_caption('Raiden Fighters')
 clock = pygame.time.Clock()
-
+font = pygame.font.SysFont('arial',20, True)
 
 def eventListener():
 	getEvents()
@@ -28,6 +28,13 @@ def getEvents():
 			enemies.respawn = True
 			pygame.time.set_timer(enemies.respawnEvent,0)
 
+def displayInfo():
+	text = font.render('Score: ' + str(player.score), 1, (0,0,0))
+	screen.window.blit(text,(50,10))
+	pygame.draw.rect(screen.window, (255,0,0), (200,10,50,10))
+	pygame.draw.rect(screen.window, (0,255,0), (200,10,50 - ((0.25*50)*(5-player.hp)),10))
+
+
 class Player:
 	def __init__(self,x,y,width,height):
 		self.x = x
@@ -36,6 +43,7 @@ class Player:
 		self.height = height
 		self.velocity = 7
 		self.hp = 5
+		self.score = 0
 		self.bullets = []
 		self.reloading = True
 		self.hitCooldown = True
@@ -73,22 +81,25 @@ class Player:
 				self.bullets.pop(self.bullets.index(bullet))
 
 	def hit(self):
+		global run 
 		for enemy in enemies.enemies:
 			if self.hitbox[1] <= enemy.hitbox[1] + enemy.hitbox[3] and self.hitbox[1] + self.hitbox[3] >= enemy.hitbox[1]:
 				if self.hitbox[0] <= enemy.hitbox[0] + enemy.hitbox[2] and self.hitbox[0] + self.hitbox[2] >= enemy.hitbox[0]:
-					if self.hitCooldown:
+					if self.hitCooldown and self.hp >= 2:
 						self.hitCooldown = False
 						self.hp -= 1
-						print(self.hp)
 						pygame.time.set_timer(self.hitEvent,500)
+					elif self.hitCooldown and self.hp < 2:
+						run = False
 			for bullet in enemy.bullets:
 				if self.hitbox[1] <= bullet.y + bullet.radius and self.hitbox[1] + self.hitbox[3] >= bullet.y - bullet.radius:
 					if self.hitbox[0] <= bullet.x + bullet.radius and self.hitbox[0] + self.hitbox[2] >= bullet.x - bullet.radius:
-						if self.hitCooldown:
+						if self.hitCooldown and self.hp >= 1:
 							self.hitCooldown = False
 							self.hp -= 1
-							print(self.hp)
 							pygame.time.set_timer(self.hitEvent,500)
+						elif self.hitCooldown and self.hp < 2:
+							run = False
 
 class Enemy:
 	def __init__(self,x,y,width,height):
@@ -115,6 +126,7 @@ class Enemy:
 			if bullet.y + bullet.radius < self.hitbox[1] + self.hitbox[3] and bullet.y - bullet.radius > self.hitbox[1] and bullet.x + bullet.radius > self.hitbox[0] and bullet.x - bullet.radius < self.hitbox[0] + self.hitbox[2]:
 				player.bullets.pop(player.bullets.index(bullet))
 				enemies.enemies.pop(enemies.enemies.index(self))
+				player.score += 1
 	
 	def shoot(self):
 		if random.randrange(100) < 4:
@@ -189,6 +201,7 @@ while run:
 	player.bulletMover()
 	player.hit()
 	player.draw()
+	displayInfo()
 	enemies.control()
 	pygame.display.update()
 
