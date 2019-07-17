@@ -29,6 +29,11 @@ def getEvents():
 		if event.type == enemies.respawnEvent:
 			enemies.respawn = True
 			pygame.time.set_timer(enemies.respawnEvent,0)
+		if event.type == enemy.deleteUpgradeEvent:
+			for upgrade in enemies.upgrades:
+				upgrade.boll = False
+				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
+				pygame.time.set_timer(enemy.deleteUpgradeEvent,0)
 
 def displayInfo():
 	text = font.render('Score: ' + str(player.score), 1, (0,0,0))
@@ -103,6 +108,7 @@ class Player:
 		self.velocity = 7
 		self.hp = 5
 		self.score = 0
+		self.reloadSpeed = 1000
 		self.bullets = []
 		self.reloading = True
 		self.hitCooldown = True
@@ -117,7 +123,7 @@ class Player:
 			if self.reloading:
 				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),7))
 				self.reloading = False
-				pygame.time.set_timer(self.reloadingEvent,500)
+				pygame.time.set_timer(self.reloadingEvent,player.reloadSpeed)
 		if keys[pygame.K_LEFT] and self.x > self.velocity:
 			self.x -= self.velocity
 		if keys[pygame.K_RIGHT] and self.x < 450 - self.width :
@@ -148,6 +154,9 @@ class Player:
 						if self.hitCooldown and self.hp >= 2:
 							self.hitCooldown = False
 							self.hp -= 1
+							if player.reloadSpeed < 1000:
+								player.reloadSpeed += 200
+							player.reloadSpeed -= 100
 							pygame.time.set_timer(self.hitEvent,500)
 						elif self.hitCooldown and self.hp < 2:
 							gameOver = True
@@ -157,9 +166,24 @@ class Player:
 						if self.hitCooldown and self.hp >= 1:
 							self.hitCooldown = False
 							self.hp -= 1
+							if player.reloadSpeed < 1000:
+								player.reloadSpeed += 200
 							pygame.time.set_timer(self.hitEvent,500)
 						elif self.hitCooldown and self.hp < 2:
 							gameOver = True
+
+	def addUpgrade(self):
+		for upgrade in enemies.upgrades:
+			if upgrade.y + upgrade.height > self.y and upgrade.y < self.y + self.height and upgrade.x < self.x + self.width and upgrade.x + upgrade.width > self.x:
+				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
+				if upgrade.heal:
+					self.hp += 1
+					upgradeBoll = False
+				else:
+					if player.reloadSpeed > 200:
+						player.reloadSpeed -= 200
+					upgradeBoll = False
+
 class Enemy:
 	def __init__(self,x,y,width,height):
 		self.x = x
@@ -172,6 +196,11 @@ class Enemy:
 		self.hitbox = (self.x+13,self.y,25,50)
 		self.skin = pygame.image.load('skins/enemy.png')
 		self.skin = pygame.transform.scale(self.skin, (50,50))
+		self.deleteUpgradeEvent = pygame.USEREVENT + 3
+		if random.randrange(10) < 9:
+			self.hasUpgrade = True
+		else:
+			self.hasUpgrade = False
 
 	def draw(self):
 		if self.visible:
@@ -184,14 +213,19 @@ class Enemy:
 
 	def hit(self):
 		for bullet in player.bullets:
-			if bullet.y + bullet.radius < self.hitbox[1] + self.hitbox[3] and bullet.y - bullet.radius > self.hitbox[1] and bullet.x + bullet.radius > self.hitbox[0] and bullet.x - bullet.radius < self.hitbox[0] + self.hitbox[2]:
-				player.bullets.pop(player.bullets.index(bullet))
-				self.visible = False
-				player.score += 1
+			if self.visible:
+				if bullet.y + bullet.radius < self.hitbox[1] + self.hitbox[3] and bullet.y - bullet.radius > self.hitbox[1] and bullet.x + bullet.radius > self.hitbox[0] and bullet.x - bullet.radius < self.hitbox[0] + self.hitbox[2]:
+					player.bullets.pop(player.bullets.index(bullet))
+					self.visible = False
+					player.score += 1
+					if self.hasUpgrade and len(enemies.upgrades) < 1 and not enemies.boll:
+						enemies.boll = False
+						enemies.upgrades.append(Upgrade(self.x,self.y))
+						pygame.time.set_timer(self.deleteUpgradeEvent,3000)
 	
 	def shoot(self):
-		if random.randrange(100) < 4:
-			if self.visible:
+		if self.visible:
+			if random.randrange(100) < 4:
 				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),8))
 		for bullet in self.bullets:
 			if bullet.y < screen.height and bullet.y > 0:
@@ -203,8 +237,10 @@ class Enemy:
 class Enemies:
 	def __init__(self):
 		self.enemies = []
+		self.upgrades = []
 		self.respawnEvent = pygame.USEREVENT + 2
 		self.respawn = True
+		self.boll = False
 
 	def control(self):
 		if self.respawn:
@@ -220,6 +256,7 @@ class Enemies:
 				enemy.hit()
 				enemy.shoot()
 
+
 class Projectile:
 	def __init__(self,x,y,color,velocity):
 		self.x = x
@@ -227,9 +264,29 @@ class Projectile:
 		self.color = color
 		self.velocity = velocity
 		self.radius = 6
+		
 
 	def draw(self):
 		pygame.draw.circle(screen.window, self.color, (self.x,self.y), self.radius)
+
+class Upgrade:
+	def __init__(self,x,y):
+		self.x = x
+		self.y = y
+		self.width = 12
+		self.height = 12
+		if random.randrange(10) < 5 and player.hp<5:
+			self.heal = True
+		else:
+			self.heal = False
+		self.deleteUpgrade = True
+		
+
+	def draw(self):
+		if self.heal:
+			pygame.draw.rect(screen.window,(0,255,0),(self.x+20,self.y,self.width,self.height),0)
+		else:
+			pygame.draw.rect(screen.window,(0,0,255),(self.x+20,self.y,self.width,self.height),0)
 
 class Screen:
 	def __init__(self,backgroundPath):
@@ -263,10 +320,14 @@ while run:
 		bullet.draw()
 	for enemy in enemies.enemies:
 		for bullet in enemy.bullets:
-			bullet.draw() 
+			bullet.draw()
+	for upgrade in enemies.upgrades:
+		upgrade.draw()
+
 	player.bulletMover()
 	player.hit()
 	player.draw()
+	player.addUpgrade()
 	displayInfo()
 	enemies.control()
 	pygame.display.update()
