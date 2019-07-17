@@ -10,6 +10,7 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont('arial',20, True)
 newGame = True
 gameOver = False
+pause = False
 
 def eventListener():
 	getEvents()
@@ -48,6 +49,41 @@ def startGameRoutine():
 def gameOverRoutine():
 	gameOverScreenEventListener()
 	drawGameOverScreen()
+
+def pauseRoutine():
+	pauseEventListener()
+	drawPauseScreen()
+
+def pauseEventListener():
+	global run
+	global gameOver
+	global newGame
+	global pause
+	for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			run = False
+			gameOver = False
+			newGame = False
+			pause = False
+		if event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_x:
+				run = False
+				gameOver = False
+				newGame = False
+				pause = False
+			if event.key == pygame.K_c:
+				pause = False
+
+def drawPauseScreen():
+	screen.window.fill((99, 78, 78))
+	gameOverText = font.render('Jogo pausado!', 1, (255, 87, 51))
+	screen.window.blit(gameOverText,((screen.width/2)-50,10))
+	scoreText = font.render('Score: ' + str(player.score), 1, (255, 87, 51))
+	screen.window.blit(scoreText,((screen.width/2)-30,75))
+	playAgainText = font.render("'C' para continuar, 'X' para sair.",1,(255, 87, 51))
+	screen.window.blit(playAgainText, (90,150))
+	screen.window.blit(player.skin,(212,400))
+	pygame.display.update()
 
 def drawStartGameScreen():
 	screen.window.fill((99, 78, 78))
@@ -118,6 +154,7 @@ class Player:
 		self.skin = pygame.transform.scale(self.skin, (50,50))	
 
 	def keyListener(self):
+		global pause
 		keys = pygame.key.get_pressed()
 		if keys[pygame.K_SPACE]:
 			if self.reloading:
@@ -132,6 +169,8 @@ class Player:
 			self.y -= self.velocity
 		if keys[pygame.K_DOWN] and self.y < 550 - self.height - 5:
 			self.y += self.velocity
+		if keys[pygame.K_p]:
+			pause = True
 
 	def draw(self):
 		screen.window.blit(self.skin, (self.x,self.y))
@@ -314,6 +353,8 @@ while run:
 		startGameRoutine()
 	while gameOver:
 		gameOverRoutine()
+	while pause:
+		pauseRoutine()
 	eventListener()
 	screen.scrollScreen()
 	for bullet in player.bullets:
