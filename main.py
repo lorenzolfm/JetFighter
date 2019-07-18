@@ -4,13 +4,103 @@ import pygame
 pygame.init()
 
 run = True
-
-pygame.display.set_caption('Raiden Fighters')
-clock = pygame.time.Clock()
-font = pygame.font.SysFont('arial',20, True)
 newGame = True
 gameOver = False
 pause = False
+clock = pygame.time.Clock()
+font = pygame.font.SysFont('arial',20, True)
+
+def redrawScreen():
+	screen.scrollScreen()
+	displayObjects()
+	displayInfo()
+	pygame.display.update()
+
+def displayObjects():
+	player.draw()
+	player.drawBullets()
+	enemies.drawBullets()
+	enemies.draw()
+	enemies.drawUpgrades()
+
+def displayInfo():
+	text = font.render('Score: ' + str(player.score), 1, (0,0,0))
+	screen.window.blit(text,(50,10))
+	pygame.draw.rect(screen.window, (255,0,0), (200,10,50,10))
+	pygame.draw.rect(screen.window, (0,255,0), (200,10,50 - ((0.25*50)*(5-player.hp)),10))
+
+def gameControl():
+	runStaticRoutine()
+	eventListener()
+	player.bulletMover()
+	player.hit()
+	player.addUpgrade()
+	enemies.control()
+
+def runStaticRoutine():
+	global newGame,gameOver,pause
+	while newGame:
+		startGameRoutine()
+	while gameOver:
+		gameOverRoutine()
+	while pause:
+		pauseRoutine()
+
+def startGameRoutine():
+	staticEventListener()
+	drawStaticScreen('Raiden Fighters',"'J' para jogar","'X' para sair.","'P' para pausar")
+
+def gameOverRoutine():
+	staticEventListener()
+	drawStaticScreen('Fim de Jogo!',"'J' para jogar","'X' para sair.")
+
+def pauseRoutine():
+	staticEventListener('p')
+	drawStaticScreen('Jogo pausado!',"'C' para continuar","'X' para sair")
+
+def staticEventListener(*args):
+	global run,gameOver,newGame,pause
+	for event in pygame.event.get():
+		if event.type == pygame.QUIT:
+			run = False
+			gameOver = False
+			newGame = False
+			pause = False
+		if event.type == pygame.KEYDOWN:
+			if event.key == pygame.K_x:
+				run = False
+				gameOver = False
+				newGame = False
+				pause = False
+			if args == ():
+				if event.key == pygame.K_j:
+					restartGame()
+			if args:
+				if event.key == pygame.K_c:
+					pause = False
+
+def restartGame():
+	global gameOver
+	global newGame
+
+	gameOver = False
+	newGame = False
+	player.hp = 5
+	player.score = 0
+	player.x = 212
+	player.y = 400
+	enemies.enemies.clear()
+				
+def drawStaticScreen(*strings):
+	screen.window.fill((99, 78, 78))
+	width = 0
+	height = 10
+	for string in strings:
+		text = font.render(string,1,(255, 87, 51))
+		screen.window.blit(text,((screen.width/2)-70,height))
+		height += 100
+	screen.window.blit(player.skin,(212,400))
+	pygame.display.update()
 
 def eventListener():
 	getEvents()
@@ -36,105 +126,6 @@ def getEvents():
 				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
 				pygame.time.set_timer(enemy.deleteUpgradeEvent,0)
 
-def displayInfo():
-	text = font.render('Score: ' + str(player.score), 1, (0,0,0))
-	screen.window.blit(text,(50,10))
-	pygame.draw.rect(screen.window, (255,0,0), (200,10,50,10))
-	pygame.draw.rect(screen.window, (0,255,0), (200,10,50 - ((0.25*50)*(5-player.hp)),10))
-
-def startGameRoutine():
-	gameOverScreenEventListener()
-	drawStartGameScreen()
-
-def gameOverRoutine():
-	gameOverScreenEventListener()
-	drawGameOverScreen()
-
-def pauseRoutine():
-	pauseEventListener()
-	drawPauseScreen()
-
-def pauseEventListener():
-	global run
-	global gameOver
-	global newGame
-	global pause
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			run = False
-			gameOver = False
-			newGame = False
-			pause = False
-		if event.type == pygame.KEYDOWN:
-			if event.key == pygame.K_x:
-				run = False
-				gameOver = False
-				newGame = False
-				pause = False
-			if event.key == pygame.K_c:
-				pause = False
-
-def drawPauseScreen():
-	screen.window.fill((99, 78, 78))
-	gameOverText = font.render('Jogo pausado!', 1, (255, 87, 51))
-	screen.window.blit(gameOverText,((screen.width/2)-50,10))
-	scoreText = font.render('Score: ' + str(player.score), 1, (255, 87, 51))
-	screen.window.blit(scoreText,((screen.width/2)-30,75))
-	playAgainText = font.render("'C' para continuar, 'X' para sair.",1,(255, 87, 51))
-	screen.window.blit(playAgainText, (90,150))
-	screen.window.blit(player.skin,(212,400))
-	pygame.display.update()
-
-def drawStartGameScreen():
-	screen.window.fill((99, 78, 78))
-	gameOverText = font.render('Defenda nossa ilha dos invasores!', 1, (255, 87, 51))
-	screen.window.blit(gameOverText,((screen.width/2)-170,10))
-	playAgainText = font.render("'J' para jogar, 'X' para sair.",1,(255, 87, 51))
-	screen.window.blit(playAgainText, (100,150))
-	screen.window.blit(player.skin,(212,400))
-	pygame.display.update()
-
-def drawGameOverScreen():
-	screen.window.fill((99, 78, 78))
-	gameOverText = font.render('Fim de Jogo!', 1, (255, 87, 51))
-	screen.window.blit(gameOverText,((screen.width/2)-50,10))
-	scoreText = font.render('Score: ' + str(player.score), 1, (255, 87, 51))
-	screen.window.blit(scoreText,((screen.width/2)-30,75))
-	playAgainText = font.render("'J' para jogar, 'X' para sair.",1,(255, 87, 51))
-	screen.window.blit(playAgainText, (120,150))
-	screen.window.blit(player.skin,(212,400))
-	pygame.display.update()
-
-def gameOverScreenEventListener():
-	global run
-	global gameOver
-	global newGame
-	for event in pygame.event.get():
-		if event.type == pygame.QUIT:
-			run = False
-			gameOver = False
-			newGame = False
-		if event.type == pygame.KEYDOWN:
-			if event.key == pygame.K_x:
-				run = False
-				gameOver = False
-				newGame = False
-			if event.key == pygame.K_j:
-				restartGame()
-
-def restartGame():
-	global gameOver
-	global newGame
-
-	gameOver = False
-	newGame = False
-	player.hp = 5
-	player.score = 0
-	player.x = 212
-	player.y = 400
-	enemies.enemies.clear()
-
-
 class Player:
 	def __init__(self,x,y,width,height):
 		self.x = x
@@ -151,7 +142,7 @@ class Player:
 		self.reloadingEvent = pygame.USEREVENT + 1
 		self.hitEvent = pygame.USEREVENT +2
 		self.skin = pygame.image.load('skins/player.png')
-		self.skin = pygame.transform.scale(self.skin, (50,50))	
+		self.skin = pygame.transform.scale(self.skin, (50,50))
 
 	def keyListener(self):
 		global pause
@@ -175,7 +166,6 @@ class Player:
 	def draw(self):
 		screen.window.blit(self.skin, (self.x,self.y))
 		self.hitbox = (self.x+13,self.y,25,50)
-		#pygame.draw.rect(screen.window,(255,0,0), self.hitbox, 2)
 
 	def bulletMover(self):
 		for bullet in self.bullets:
@@ -223,6 +213,10 @@ class Player:
 						player.reloadSpeed -= 200
 					upgradeBoll = False
 
+	def drawBullets(self):
+		for bullet in self.bullets:
+			bullet.draw()
+
 class Enemy:
 	def __init__(self,x,y,width,height):
 		self.x = x
@@ -236,7 +230,7 @@ class Enemy:
 		self.skin = pygame.image.load('skins/enemy.png')
 		self.skin = pygame.transform.scale(self.skin, (50,50))
 		self.deleteUpgradeEvent = pygame.USEREVENT + 3
-		if random.randrange(10) < 9:
+		if random.randrange(10) <= 3:
 			self.hasUpgrade = True
 		else:
 			self.hasUpgrade = False
@@ -245,7 +239,6 @@ class Enemy:
 		if self.visible:
 			screen.window.blit(self.skin, (self.x,self.y))
 			self.hitbox = (self.x+13,self.y,25,50)
-			#pygame.draw.rect(screen.window,(255,0,0), self.hitbox, 2)
 
 	def move(self):
 		self.y += self.velocity
@@ -264,14 +257,13 @@ class Enemy:
 	
 	def shoot(self):
 		if self.visible:
-			if random.randrange(100) < 4:
+			if random.randrange(100) < 3:
 				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),8))
 		for bullet in self.bullets:
 			if bullet.y < screen.height and bullet.y > 0:
 				bullet.y += bullet.velocity
 			else:
 				self.bullets.pop(self.bullets.index(bullet))
-
 
 class Enemies:
 	def __init__(self):
@@ -290,11 +282,22 @@ class Enemies:
 			if enemy.y > 550:
 				self.enemies.pop(self.enemies.index(enemy))
 			else:
-				enemy.draw()
 				enemy.move()
 				enemy.hit()
 				enemy.shoot()
 
+	def draw(self):
+		for enemy in self.enemies:
+			enemy.draw()
+
+	def drawBullets(self):
+		for enemy in self.enemies:
+			for bullet in enemy.bullets:
+				bullet.draw()
+
+	def drawUpgrades(self):
+		for upgrade in self.upgrades:
+			upgrade.draw()
 
 class Projectile:
 	def __init__(self,x,y,color,velocity):
@@ -303,8 +306,7 @@ class Projectile:
 		self.color = color
 		self.velocity = velocity
 		self.radius = 6
-		
-
+	
 	def draw(self):
 		pygame.draw.circle(screen.window, self.color, (self.x,self.y), self.radius)
 
@@ -320,7 +322,6 @@ class Upgrade:
 			self.heal = False
 		self.deleteUpgrade = True
 		
-
 	def draw(self):
 		if self.heal:
 			pygame.draw.rect(screen.window,(0,255,0),(self.x+20,self.y,self.width,self.height),0)
@@ -334,6 +335,7 @@ class Screen:
 		self.height = self.background.get_rect().height
 		self.width = self.background.get_rect().width
 		self.window = pygame.display.set_mode((self.width,self.height))
+		pygame.display.set_caption('Raiden Fighters')
 
 	def scrollScreen(self):
 		relative_y = self.image_y % self.height
@@ -349,27 +351,7 @@ enemies = Enemies()
 
 while run:
 	clock.tick(27)
-	while newGame:
-		startGameRoutine()
-	while gameOver:
-		gameOverRoutine()
-	while pause:
-		pauseRoutine()
-	eventListener()
-	screen.scrollScreen()
-	for bullet in player.bullets:
-		bullet.draw()
-	for enemy in enemies.enemies:
-		for bullet in enemy.bullets:
-			bullet.draw()
-	for upgrade in enemies.upgrades:
-		upgrade.draw()
+	gameControl()
+	redrawScreen()
 
-	player.bulletMover()
-	player.hit()
-	player.draw()
-	player.addUpgrade()
-	displayInfo()
-	enemies.control()
-	pygame.display.update()
-
+pygame.quit()
