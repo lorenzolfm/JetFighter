@@ -64,19 +64,12 @@ def pauseRoutine():
 	drawStaticScreen('Jogo pausado!',"'C' para continuar","'X' para sair")
 
 def staticEventListener(*args):
-	global run,gameOver,newGame,pause
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
-			run = False
-			gameOver = False
-			newGame = False
-			pause = False
+			endGame()
 		if event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_x:
-				run = False
-				gameOver = False
-				newGame = False
-				pause = False
+				endGame()
 			if args == ():
 				if event.key == pygame.K_j:
 					restartGame()
@@ -84,9 +77,12 @@ def staticEventListener(*args):
 				if event.key == pygame.K_c:
 					pause = False
 
+def endGame():
+	global run,gameOver,newGame,pause
+	run = gameOver = newGame = pause = False
+
 def restartGame():
-	global gameOver
-	global newGame
+	global gameOver,newGame
 
 	gameOver = False
 	newGame = False
@@ -130,6 +126,7 @@ def getEvents():
 				upgrade.bool = False
 				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
 				pygame.time.set_timer(enemy.deleteUpgradeEvent,0)
+
 
 class Player:
 	def __init__(self,x,y,width,height):
@@ -181,7 +178,6 @@ class Player:
 				self.bullets.pop(self.bullets.index(bullet))
 
 	def detectCollisions(self):
-		global gameOver 
 		for enemy in enemies.enemies:
 			if self.hitbox[1] <= enemy.hitbox[1] + enemy.hitbox[3] and self.hitbox[1] + self.hitbox[3] >= enemy.hitbox[1]:
 				if self.hitbox[0] <= enemy.hitbox[0] + enemy.hitbox[2] and self.hitbox[0] + self.hitbox[2] >= enemy.hitbox[0]:
@@ -193,6 +189,7 @@ class Player:
 						player.hit()
 
 	def hit(self):
+		global gameOver
 		if self.hitCooldown and self.hp >= 2:
 			self.hitCooldown = False
 			self.hp -= 1
