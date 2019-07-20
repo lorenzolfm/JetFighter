@@ -38,7 +38,7 @@ def gameControl():
 	runStaticRoutine()
 	eventListener()
 	player.bulletMover()
-	player.hit()
+	player.detectCollisions()
 	player.addUpgrade()
 	enemies.control()
 
@@ -127,7 +127,7 @@ def getEvents():
 			pygame.time.set_timer(enemies.respawnEvent,0)
 		if event.type == enemy.deleteUpgradeEvent:
 			for upgrade in enemies.upgrades:
-				upgrade.boll = False
+				upgrade.bool = False
 				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
 				pygame.time.set_timer(enemy.deleteUpgradeEvent,0)
 
@@ -180,34 +180,29 @@ class Player:
 			else:
 				self.bullets.pop(self.bullets.index(bullet))
 
-	def hit(self):
+	def detectCollisions(self):
 		global gameOver 
 		for enemy in enemies.enemies:
 			if self.hitbox[1] <= enemy.hitbox[1] + enemy.hitbox[3] and self.hitbox[1] + self.hitbox[3] >= enemy.hitbox[1]:
 				if self.hitbox[0] <= enemy.hitbox[0] + enemy.hitbox[2] and self.hitbox[0] + self.hitbox[2] >= enemy.hitbox[0]:
 					if enemy.visible:
-						if self.hitCooldown and self.hp >= 2:
-							self.hitCooldown = False
-							self.hp -= 1
-							if player.reloadSpeed < 1000:
-								player.reloadSpeed += 200
-							player.reloadSpeed -= 100
-							pygame.mixer.Sound.play(crahsSound)
-							pygame.time.set_timer(self.hitEvent,500)
-						elif self.hitCooldown and self.hp < 2:
-							gameOver = True
+						player.hit()
 			for bullet in enemy.bullets:
 				if self.hitbox[1] <= bullet.y + bullet.radius and self.hitbox[1] + self.hitbox[3] >= bullet.y - bullet.radius:
 					if self.hitbox[0] <= bullet.x + bullet.radius and self.hitbox[0] + self.hitbox[2] >= bullet.x - bullet.radius:
-						if self.hitCooldown and self.hp >= 1:
-							self.hitCooldown = False
-							self.hp -= 1
-							if player.reloadSpeed < 1000:
-								player.reloadSpeed += 200
-							pygame.mixer.Sound.play(crahsSound)
-							pygame.time.set_timer(self.hitEvent,500)
-						elif self.hitCooldown and self.hp < 2:
-							gameOver = True
+						player.hit()
+
+	def hit(self):
+		if self.hitCooldown and self.hp >= 2:
+			self.hitCooldown = False
+			self.hp -= 1
+			if player.reloadSpeed < 1000:
+				player.reloadSpeed += 200
+			pygame.mixer.Sound.play(crahsSound)
+			pygame.time.set_timer(self.hitEvent,500)
+		elif self.hitCooldown and self.hp < 2:
+			gameOver = True
+
 
 	def addUpgrade(self):
 		for upgrade in enemies.upgrades:
@@ -215,11 +210,11 @@ class Player:
 				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
 				if upgrade.heal:
 					self.hp += 1
-					upgradeBoll = False
+					upgrade.bool = False
 				else:
 					if player.reloadSpeed > 200:
 						player.reloadSpeed -= 200
-					upgradeBoll = False
+					upgrade.bool = False
 
 	def drawBullets(self):
 		for bullet in self.bullets:
@@ -251,15 +246,15 @@ class Enemy:
 	def move(self):
 		self.y += self.velocity
 
-	def hit(self):
+	def detectCollisions(self):
 		for bullet in player.bullets:
 			if self.visible:
 				if bullet.y + bullet.radius < self.hitbox[1] + self.hitbox[3] and bullet.y - bullet.radius > self.hitbox[1] and bullet.x + bullet.radius > self.hitbox[0] and bullet.x - bullet.radius < self.hitbox[0] + self.hitbox[2]:
 					player.bullets.pop(player.bullets.index(bullet))
 					self.visible = False
 					player.score += 1
-					if self.hasUpgrade and len(enemies.upgrades) < 1 and not enemies.boll:
-						enemies.boll = False
+					if self.hasUpgrade and len(enemies.upgrades) < 1 and not enemies.bool:
+						enemies.bool = False
 						enemies.upgrades.append(Upgrade(self.x,self.y))
 						pygame.time.set_timer(self.deleteUpgradeEvent,3000)
 	
@@ -279,7 +274,7 @@ class Enemies:
 		self.upgrades = []
 		self.respawnEvent = pygame.USEREVENT + 2
 		self.respawn = True
-		self.boll = False
+		self.bool = False
 
 	def control(self):
 		if self.respawn:
@@ -291,7 +286,7 @@ class Enemies:
 				self.enemies.pop(self.enemies.index(enemy))
 			else:
 				enemy.move()
-				enemy.hit()
+				enemy.detectCollisions()
 				enemy.shoot()
 
 	def draw(self):
@@ -324,7 +319,7 @@ class Upgrade:
 		self.y = y
 		self.width = 12
 		self.height = 12
-		if random.randrange(10) < 5 and player.hp<5:
+		if random.randrange(10) < 5 and player.hp < 5:
 			self.heal = True
 		else:
 			self.heal = False
