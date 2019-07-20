@@ -7,8 +7,12 @@ run = True
 newGame = True
 gameOver = False
 pause = False
+
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('arial',20, True)
+shootSound = pygame.mixer.Sound('soundEffects/tiro.wav')
+crahsSound = pygame.mixer.Sound('soundEffects/batida.wav')
+upgradeSound = pygame.mixer.Sound('soundEffects/upgrade.wav')
 
 def redrawScreen():
 	screen.scrollScreen()
@@ -151,6 +155,7 @@ class Player:
 			if self.reloading:
 				self.bullets.append(Projectile((round(self.x + self.width // 2)), (round(self.y, + self.height // 2)),(255,0,0),7))
 				self.reloading = False
+				pygame.mixer.Sound.play(shootSound)
 				pygame.time.set_timer(self.reloadingEvent,player.reloadSpeed)
 		if keys[pygame.K_LEFT] and self.x > self.velocity:
 			self.x -= self.velocity
@@ -186,6 +191,7 @@ class Player:
 							if player.reloadSpeed < 1000:
 								player.reloadSpeed += 200
 							player.reloadSpeed -= 100
+							pygame.mixer.Sound.play(crahsSound)
 							pygame.time.set_timer(self.hitEvent,500)
 						elif self.hitCooldown and self.hp < 2:
 							gameOver = True
@@ -197,6 +203,7 @@ class Player:
 							self.hp -= 1
 							if player.reloadSpeed < 1000:
 								player.reloadSpeed += 200
+							pygame.mixer.Sound.play(crahsSound)
 							pygame.time.set_timer(self.hitEvent,500)
 						elif self.hitCooldown and self.hp < 2:
 							gameOver = True
@@ -321,6 +328,7 @@ class Upgrade:
 		else:
 			self.heal = False
 		self.deleteUpgrade = True
+		pygame.mixer.Sound.play(upgradeSound)
 		
 	def draw(self):
 		if self.heal:
