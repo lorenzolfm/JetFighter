@@ -127,7 +127,6 @@ def getEvents():
 				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
 				pygame.time.set_timer(enemy.deleteUpgradeEvent,0)
 
-
 class Player:
 	def __init__(self,x,y,width,height):
 		self.x = x
