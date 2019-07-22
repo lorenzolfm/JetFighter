@@ -35,6 +35,7 @@ def displayInfo():
 	pygame.draw.rect(screen.window, (0,255,0), (200,10,50 - ((0.25*50)*(5-player.hp)),10))
 
 def gameControl():
+	clock.tick(27)
 	runStaticRoutine()
 	eventListener()
 	player.bulletMover()
@@ -350,7 +351,6 @@ screen = Screen('skins/bg.png')
 enemies = Enemies()
 
 while run:
-	clock.tick(27)
 	gameControl()
 	redrawScreen()
 
