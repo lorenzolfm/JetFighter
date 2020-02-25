@@ -128,32 +128,41 @@ def getEvents():
 				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
 				pygame.time.set_timer(enemy.deleteUpgradeEvent,0)
 
+  
+        
+
+
 class FighterJet:
     def __init__(self):
         self.x = 255 
         self.y = 300 
         self.width = 50
         self.height = 50
+        self.velocity = 5
         self.bullets = []
+        self.hitbox = (self.x + 13, self.y, 25, 50)
+        self.visible = True
         self.skin = None
 
     def draw(self):
-        screen.window.blit(self.skin, (self.x, self.y))
+        if self.visible:
+            screen.window.blit(self.skin, (self.x, self.y))
+            self.updateHitbox()
+
+    def updateHitbox(self):
+        self.hitbox = (self.x + 13, self.y, 25, 50)
 
 class Player(FighterJet):
 	def __init__(self):
             super().__init__()
-            self.x = 255 
-            self.y = 300 
             self.velocity = 7
             self.hp = 5
             self.score = 0
             self.reloadSpeed = 1000
-            self.bullets = []
             self.reloading = True
             self.hitCooldown = True
             self.reloadingEvent = pygame.USEREVENT + 1
-            self.hitEvent = pygame.USEREVENT +2
+            self.hitEvent = pygame.USEREVENT + 2
             self.skin = pygame.image.load('skins/player.png')
             self.skin = pygame.transform.scale(self.skin, (50,50))
 
@@ -176,10 +185,6 @@ class Player(FighterJet):
 			self.y += self.velocity
 		if keys[pygame.K_p]:
 			pause = True
-
-	def draw(self):
-		screen.window.blit(self.skin, (self.x,self.y))
-		self.hitbox = (self.x+13,self.y,25,50)
 
 	def bulletMover(self):
 		for bullet in self.bullets:
@@ -211,7 +216,6 @@ class Player(FighterJet):
 		elif self.hitCooldown and self.hp < 2:
 			gameOver = True
 
-
 	def addUpgrade(self):
 		for upgrade in enemies.upgrades:
 			if upgrade.y + upgrade.height > self.y and upgrade.y < self.y + self.height and upgrade.x < self.x + self.width and upgrade.x + upgrade.width > self.x:
@@ -228,28 +232,18 @@ class Player(FighterJet):
 		for bullet in self.bullets:
 			bullet.draw()
 
-class Enemy:
-	def __init__(self,x,y,width,height):
-		self.x = x
-		self.y = y
-		self.width = width
-		self.height = height
-		self.velocity = 5
-		self.bullets = []
-		self.visible = True
-		self.hitbox = (self.x+13,self.y,25,50)
-		self.skin = pygame.image.load('skins/enemy.png')
-		self.skin = pygame.transform.scale(self.skin, (50,50))
-		self.deleteUpgradeEvent = pygame.USEREVENT + 3
-		if random.randrange(10) <= 3:
-			self.hasUpgrade = True
-		else:
-			self.hasUpgrade = False
-
-	def draw(self):
-		if self.visible:
-			screen.window.blit(self.skin, (self.x,self.y))
-			self.hitbox = (self.x+13,self.y,25,50)
+class Enemy(FighterJet):
+	def __init__(self, x, y):
+            super().__init__()
+            self.x = x
+            self.y = y
+            self.skin = pygame.image.load('skins/enemy.png')
+            self.skin = pygame.transform.scale(self.skin, (50,50))
+            self.deleteUpgradeEvent = pygame.USEREVENT + 3
+            if random.randrange(10) <= 3:
+                    self.hasUpgrade = True
+            else:
+                    self.hasUpgrade = False
 
 	def move(self):
 		self.y += self.velocity
@@ -286,7 +280,7 @@ class Enemies:
 
 	def control(self):
 		if self.respawn:
-			self.enemies.append(Enemy(random.randrange(400),20,50,50))
+			self.enemies.append(Enemy(random.randrange(400), 20))
 			self.respawn = False
 			pygame.time.set_timer(self.respawnEvent,1500)
 		for enemy in self.enemies:
@@ -356,10 +350,37 @@ class Screen:
 			self.window.blit(self.background, (0,relative_y))
 		self.image_y += 1
 
+class GameControl:
+    player = Player()
+    enemy = Enemy(100,100)
+    screen = Screen('skins/bg.png')
+
+    def __init__(self):
+        self.run = True
+        self.newGame = True
+        #self.gameOver = False
+        self.pause = False
+        
+    def endGame(self):
+        self.run = self.newGame = self.gameOver = self.pause = False
+
+    def restartGame(self):
+        self.pause = self.gameOver = False
+        player.hp = 5
+        
+    #  def restartGame(self):
+	#  self.pause = self.gameOver = False
+	#  player.hp = 5
+	#  player.score = 0
+	#  player.x = 212
+	#  player.y = 400
+	#  enemies.enemies.clear()
+ 
 player = Player()
-enemy = Enemy(100,100,50,50)
+enemy = Enemy(100,100)
 screen = Screen('skins/bg.png')
 enemies = Enemies()
+control = GameControl()
 
 while run:
 	gameControl()
