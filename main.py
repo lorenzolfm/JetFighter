@@ -128,23 +128,34 @@ def getEvents():
 				enemies.upgrades.pop(enemies.upgrades.index(upgrade))
 				pygame.time.set_timer(enemy.deleteUpgradeEvent,0)
 
-class Player:
-	def __init__(self,x,y,width,height):
-		self.x = x
-		self.y = y
-		self.width = width
-		self.height = height
-		self.velocity = 7
-		self.hp = 5
-		self.score = 0
-		self.reloadSpeed = 1000
-		self.bullets = []
-		self.reloading = True
-		self.hitCooldown = True
-		self.reloadingEvent = pygame.USEREVENT + 1
-		self.hitEvent = pygame.USEREVENT +2
-		self.skin = pygame.image.load('skins/player.png')
-		self.skin = pygame.transform.scale(self.skin, (50,50))
+class FighterJet:
+    def __init__(self):
+        self.x = 255 
+        self.y = 300 
+        self.width = 50
+        self.height = 50
+        self.bullets = []
+        self.skin = None
+
+    def draw(self):
+        screen.window.blit(self.skin, (self.x, self.y))
+
+class Player(FighterJet):
+	def __init__(self):
+            super().__init__()
+            self.x = 255 
+            self.y = 300 
+            self.velocity = 7
+            self.hp = 5
+            self.score = 0
+            self.reloadSpeed = 1000
+            self.bullets = []
+            self.reloading = True
+            self.hitCooldown = True
+            self.reloadingEvent = pygame.USEREVENT + 1
+            self.hitEvent = pygame.USEREVENT +2
+            self.skin = pygame.image.load('skins/player.png')
+            self.skin = pygame.transform.scale(self.skin, (50,50))
 
 	def keyListener(self):
 		global pause
@@ -345,7 +356,7 @@ class Screen:
 			self.window.blit(self.background, (0,relative_y))
 		self.image_y += 1
 
-player = Player(225,300,50,50)
+player = Player()
 enemy = Enemy(100,100,50,50)
 screen = Screen('skins/bg.png')
 enemies = Enemies()
